@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 
 from pages.login_page import LoginPage
@@ -22,21 +24,17 @@ def user_credentials(request):
 
 
 @pytest.fixture(scope='function')
-def setup_driver():
-    driver = BrowserFactory.get_driver('chrome')
+def setup_driver(request):
+    driver = BrowserFactory.get_driver("chrome")
     driver.get(Config.BASE_URL)
     yield driver
     driver.quit()
+    del BrowserFactory._local.driver  # Ensure the driver is removed from thread-local storage
 
 
 def test_login(setup_driver, user_credentials):
     driver = setup_driver
     login_page = LoginPage(driver)
-    # usernames_input = login_page.get_usernames().replace("Accepted usernames are:", "").split('\n')
-    # passwords_input = login_page.get_password().replace("Password for all users:", "").split('\n')
-    # usernames = [s for s in usernames_input if s.strip()]
-    # passwords = [s for s in passwords_input if s.strip()]
-
     username, password = user_credentials
     assert login_page.is_title_visible(), "Login title is not visible"
     login_page.enter_username(username)
@@ -61,11 +59,13 @@ def test_login(setup_driver, user_credentials):
 
 
 if __name__ == "__main__":
-    pytest.main([
+    args = [
+        "tests/",  # Directory where your tests are located
         "-v",  # Verbose mode
         "--html=reports/test_report.html",  # HTML report file location
         "--self-contained-html",  # Embed CSS and JavaScript in HTML
         "--maxfail=2",  # Limit displayed failures to 2
-        "--title=My Test Report",  # Custom title for the report
+        "-n", "6",  # Run tests in parallel with 4 workers
         "--quiet"  # Suppress console output
-    ])
+    ]
+    pytest.main(args)

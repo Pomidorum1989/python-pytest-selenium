@@ -1,3 +1,4 @@
+import threading
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.chrome.options import Options as ChromeOptions
@@ -11,17 +12,20 @@ from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
 
 class BrowserFactory:
+    _local = threading.local()
 
     @staticmethod
     def get_driver(browser_name):
-        if browser_name.lower() == 'chrome':
-            return BrowserFactory._get_chrome_driver()
-        elif browser_name.lower() == 'firefox':
-            return BrowserFactory._get_firefox_driver()
-        elif browser_name.lower() == 'edge':
-            return BrowserFactory._get_edge_driver()
-        else:
-            raise ValueError(f"Unsupported browser: {browser_name}")
+        if not hasattr(BrowserFactory._local, 'driver'):
+            if browser_name.lower() == 'chrome':
+                BrowserFactory._local.driver = BrowserFactory._get_chrome_driver()
+            elif browser_name.lower() == 'firefox':
+                BrowserFactory._local.driver = BrowserFactory._get_firefox_driver()
+            elif browser_name.lower() == 'edge':
+                BrowserFactory._local.driver = BrowserFactory._get_edge_driver()
+            else:
+                raise ValueError(f"Unsupported browser: {browser_name}")
+        return BrowserFactory._local.driver
 
     @staticmethod
     def _get_chrome_driver():
@@ -32,6 +36,7 @@ class BrowserFactory:
         chrome_options.add_argument("--start-maximized")
         chrome_options.add_argument("--disable-extensions")
         chrome_options.add_argument("--disable-infobars")
+        chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
         service = ChromeService(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=chrome_options)
         driver.maximize_window()

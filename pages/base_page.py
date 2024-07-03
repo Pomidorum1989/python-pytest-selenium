@@ -1,5 +1,6 @@
 import os
 
+import pytest
 from selenium.common import NoSuchElementException, TimeoutException
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.wait import WebDriverWait
